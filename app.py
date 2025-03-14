@@ -17,18 +17,17 @@ def upload():
     return "uploading"
 
 async def process_files(all_files):
-    chunks = batched(all_files, 3)
-    print(chunks)
-    for chunk in chunks:
-        for file in chunk:
-            await process_file(file)
-            print(file)
+    semaphore = asyncio.Semaphore(3)
+    tasks = [process_file(semaphore, file) for file in all_files]
+    await asyncio.gather(*tasks)
 
-async def process_file(file):
-    sleep_time = random.randint(3,9)
-    print(sleep_time, file.name)
-    await asyncio.sleep(sleep_time)
-    print('timer end for', file.name)
+async def process_file(semaphore, file):
+    async with semaphore:
+        sleep_time = random.randint(3,9)
+        print(file)
+        print(sleep_time, file.name)
+        await asyncio.sleep(sleep_time)
+        print('timer end for', file.name)
     pass
 
 app.config['SECRET_KEY'] = "YOUR_SECRET_KEY_HERE"
